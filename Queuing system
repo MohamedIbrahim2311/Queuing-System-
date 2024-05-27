@@ -1,0 +1,102 @@
+//Mohamed Ibrahim Abdo //
+//211008557//
+//Queuing system//
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+using namespace std;
+
+void analyzeStatistics(vector<vector<int>>& queuingTable);
+
+void generateQueuingTable(int customers, vector<int> interArrivalTimes, vector<int> serviceTimes) {
+    vector<vector<int>> queuingTable;
+    int arrivalTime = 0;
+    int serviceStartsAt = 0;
+    vector<int> queue;
+
+    for (int i = 0; i < customers; ++i) {
+        if (i == 0) {
+            arrivalTime = interArrivalTimes[i];
+        } else {
+            arrivalTime += interArrivalTimes[i];
+        }
+
+        if (i == 0) {
+            serviceStartsAt = arrivalTime;
+        } else {
+            serviceStartsAt = max(arrivalTime, *max_element(queue.begin(), queue.end()));
+        }
+
+        int serviceEndsAt = serviceStartsAt + serviceTimes[i];
+        int waitingTime = serviceStartsAt - arrivalTime;
+        int queueLength = 0;
+        for (int j = 0; j < queue.size(); ++j) {
+            if (queue[j] > arrivalTime) {
+                queueLength++;
+            }
+        }
+
+        queuingTable.push_back({i + 1, interArrivalTimes[i], serviceTimes[i], arrivalTime,
+                               serviceStartsAt, serviceEndsAt, waitingTime, queueLength});
+        queue.push_back(serviceEndsAt);
+    }
+
+    cout << "Customer\tIAT\tST\tArrival Time\tService Starts\tService Ends\tWaiting Time\tQueue Length" << endl;
+    for (auto& row : queuingTable) {
+        for (auto& cell : row) {
+            cout << cell << "\t\t";
+        }
+        cout << endl;
+    }
+
+    analyzeStatistics(queuingTable);
+}
+
+void analyzeStatistics(vector<vector<int>>& queuingTable) {
+    int totalWaitingTime = 0;
+    int totalQueueLength = 0;
+    int totalCustomers = queuingTable.size();
+    int totalServiceTime = queuingTable[totalCustomers - 1][5];
+
+    for (auto& row : queuingTable) {
+        totalWaitingTime += row[6];
+        totalQueueLength += row[7];
+    }
+
+    double averageWaitingTime = static_cast<double>(totalWaitingTime) / totalCustomers;
+    double averageQueueLength = static_cast<double>(totalQueueLength) / totalCustomers;
+    double serverUtilization = static_cast<double>(totalServiceTime) / queuingTable[totalCustomers - 1][5];
+
+    double waitingTimeThreshold = 10.0;
+    double queueLengthThreshold = 5.0;
+    double utilizationThreshold = 0.8;
+
+    if (averageWaitingTime > waitingTimeThreshold || averageQueueLength > queueLengthThreshold || serverUtilization > utilizationThreshold) {
+        cout << "The manager should consider adding another server." << endl;
+    } else {
+        cout << "The manager does not need to add another server." << endl;
+    }
+
+    cout << "Average Waiting Time: " << averageWaitingTime << endl;
+    cout << "Average Queue Length: " << averageQueueLength << endl;
+    cout << "Server Utilization: " << serverUtilization << endl;
+}
+
+int main() {
+    int customers = 100;
+    vector<int> interArrivalTimes(customers);
+    vector<int> serviceTimes(customers);
+
+    srand(42);
+    for (int i = 0; i < customers; ++i) {
+        interArrivalTimes[i] = rand() % 10 + 1; 
+        serviceTimes[i] = rand() % 10 + 1; 
+    }
+
+    generateQueuingTable(customers, interArrivalTimes, serviceTimes);
+
+    return 0;
+}
+
